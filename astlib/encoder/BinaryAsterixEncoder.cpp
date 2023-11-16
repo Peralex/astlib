@@ -3,7 +3,7 @@
 /// \file BinaryAsterixEncoder.cpp
 ///
 /// \author Marian Krivos <nezmar@tutok.sk>
-/// \date 20Feb.,2017 
+/// \date 20Feb.,2017
 ///
 /// (C) Copyright 2017 R-SYS s.r.o
 /// All rights reserved.
@@ -337,10 +337,11 @@ size_t BinaryAsterixEncoder::encodeBitset(const ItemDescription& item, const Fix
     const BitsDescriptionArray& bitsDescriptions = fixed.bitsDescriptions;
     Poco::UInt64 data = 0;
     Poco::UInt64 data2 = 0;
+    Poco::UInt64 data3 = 0;
     bool encoded = false;
     int length = fixed.length;
 
-    poco_assert(length <= 16);
+    poco_assert(length <= 24);
 
     for (const BitsDescription& bits : bitsDescriptions)
     {
@@ -377,18 +378,25 @@ size_t BinaryAsterixEncoder::encodeBitset(const ItemDescription& item, const Fix
                     std::cout << "  " << bits.name << "[" << index << "] = " << (value&mask) << " (" << context.width << " bits)"<< std::endl;
             }
 
-            if (leftShift < 63)
+            if (leftShift >= 63 && leftShift < 127)
             {
-                data |= ((value & mask) << leftShift);
+                data2 |= ((value & mask) << (64 - (128 - leftShift)));
                 // FIXME: prechod cez hranicu 8 bajtov
-                if ((leftShift+context.width) >= 64)
+                if ((leftShift + context.width) >= 128)
                 {
-                    data2 |= ((value & mask) >> (64-leftShift));
+                    data3 |= ((value & mask) >> (128 - leftShift));
                 }
             }
-            else
+            else if (leftShift < 63)
             {
-                data2 |= ((value & mask) << (leftShift-64));
+                data |= ((value & mask) << leftShift);
+                if ((leftShift + context.width) >= 64)
+                {
+                    data2 |= ((value & mask) >> (64 - leftShift));
+                }
+            }
+            else {
+               data3 |= ((value & mask) << (leftShift - 128));
             }
         }
     }
@@ -399,11 +407,17 @@ size_t BinaryAsterixEncoder::encodeBitset(const ItemDescription& item, const Fix
         {
             ByteUtils::pokeBigEndian(buffer, data, length);
         }
-        else
+        else if (length > 8 && length <= 16)
         {
-            auto partialLen = length-8;
+            auto partialLen = length - 8;
             ByteUtils::pokeBigEndian(buffer, data2, partialLen);
-            ByteUtils::pokeBigEndian(buffer+partialLen, data, 8);
+            ByteUtils::pokeBigEndian(buffer + partialLen, data, 8);
+        }
+        else {
+            auto partialLen = length - 16;
+            ByteUtils::pokeBigEndian(buffer, data3, partialLen);
+            ByteUtils::pokeBigEndian(buffer + partialLen, data2, 8);
+            ByteUtils::pokeBigEndian(buffer + partialLen + 8, data, 8);
         }
 
         if (_policy.verbose)
