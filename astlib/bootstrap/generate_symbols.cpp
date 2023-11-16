@@ -3,7 +3,7 @@
 /// \file enumerate_symbols.cpp
 ///
 /// \author Marian Krivos <nezmar@tutok.sk>
-/// \date 13Feb.,2017 
+/// \date 13Feb.,2017
 ///
 /// (C) Copyright 2017 R-SYS s.r.o
 /// All rights reserved.
@@ -14,7 +14,6 @@
 #include "astlib/PrimitiveItem.h"
 
 #include <Poco/Ascii.h>
-#include <Poco/XML/Content.h>
 #include "Poco/SAX/InputSource.h"
 #include "Poco/DOM/DOMParser.h"
 #include "Poco/DOM/Element.h"
@@ -630,7 +629,7 @@ int main(int argc, char* argv[])
                 specsStream << "/// @brief file generated from XML asterix descriptions" << std::endl << std::endl;
                 specsStream << "\nnamespace astlib {" << std::endl;
             	specsStream << "const char " << name << "[" << file.size()+1 <<  "] = {\n";
-				
+
 				std::string lines;
 				int index = 1;
 				for (signed char ch : file)

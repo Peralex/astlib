@@ -3,7 +3,7 @@
 /// \file CodecDeclarationLoader.cpp
 ///
 /// \author Marian Krivos <nezmar@tutok.sk>
-/// \date 31Jan.,2017 
+/// \date 31Jan.,2017
 /// \brief Formal XML Description Loader (ASTERIXED format)
 ///
 /// (C) Copyright 2017 R-SYS s.r.o
@@ -22,7 +22,6 @@
 #include "AsterixItemDictionary.h"
 
 #include <Poco/Ascii.h>
-#include <Poco/XML/Content.h>
 #include "Poco/SAX/InputSource.h"
 #include "Poco/DOM/DOMParser.h"
 #include "Poco/DOM/Element.h"
@@ -182,7 +181,7 @@ ItemDescriptionPtr CodecDeclarationLoader::loadDataItem(CodecDescription& codecD
     auto description = element.getChildElement("DataItemName")->innerText();
     Poco::XML::Element* formatElement = dynamic_cast<Poco::XML::Element*>(element.getChildElement("DataItemFormat")->firstChild());
     poco_assert(formatElement);
-    
+
     if (_verbose)
     {
         std::cout << "  " << id << " " << formatElement->nodeName() << " " << description << std::endl;
