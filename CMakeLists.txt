@@ -18,20 +18,26 @@ set (PROJECT_VENDOR_NAME "R-SYS s.r.o.")
 set (PROJECT_VENDOR_URL "www.r-sys.sk")
 set (PROJECT_ID "${PROJECT_VENDOR_ID}.${PROJECT_NAME}")
 
+if(NOT DEFINED ENV{ISERVERDEV} AND DEFINED ENV{LIBHOME})
+	message(STATUS "ISERVERDEV is not defined but LIBHOME is, setting ISERVERDEV=$ENV{LIBHOME}")
+	set(ENV{ISERVERDEV} $ENV{LIBHOME})
+endif()
+
 #
 # Project Output Paths
 #
 set (MAINFOLDER ${PROJECT_SOURCE_DIR})
+set(LIBRARY_OUTPUT_PATH "bin")
 set (EXECUTABLE_OUTPUT_PATH "bin")
 set (ARCHIVE_OUTPUT_DIRECTORY "lib")
 set (RUNTIME_OUTPUT_DIRECTORY "lib")
 set (LIBRARY_OUTPUT_DIRECTORY "lib")
 
 include_directories(.)
-set(CMAKE_CXX_STANDARD 14) 
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_CXX_EXTENSIONS off)
-
+set(Poco_DIR "$ENV{ISERVERDEV}\\com\\github\\pocoproject\\poco_1_7_9\\cmake-build\\Poco")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
@@ -43,15 +49,13 @@ if (MSVC)
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -fPIC")
 endif()
-
-find_package(Poco 1.7.0 REQUIRED COMPONENTS Net Util XML JSON Foundation CONFIG PATHS "/opt/rsys/platform" "d:/opt/rsys/platform")
+find_package(Poco 1.7 REQUIRED COMPONENTS Net Util XML JSON Foundation CONFIG PATHS "$ENV{ISERVERDEV}\\com\\github\\pocoproject\\poco_1_7_9" "$ENV{ISERVERDEV}\\com\\github\\pocoproject\\poco_1_7_9")
 
 if ( NOT Poco_FOUND)
   message(FATAL_ERROR "Package Poco and it's components required, but not found!")
 endif()
 
 add_subdirectory(astlib lib)
-
 set(LIBS astlib ${Poco_LIBRARIES} ${SYSTEM_LIBS})
 include_directories(${Poco_INCLUDE_DIRECTORIES})
 target_include_directories(astlib INTERFACE .)

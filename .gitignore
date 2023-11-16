@@ -8,7 +8,6 @@ Makefile
 cmake_install.cmake
 package-lock.json
 
-
 # Compiled Object files
 *.slo
 *.lo
@@ -74,6 +73,6 @@ package-lock.json
 /bin/
 /install_manifest.txt
 /astlib/AsterixItemDictionary.js
-/release
+/Release
 /server.js
 /.vs/astlib/v15

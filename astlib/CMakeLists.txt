@@ -1,11 +1,21 @@
 set(LIBVER "0.9.0")
 
-find_package(Poco 1.7.0 REQUIRED COMPONENTS Foundation JSON XML CONFIG PATHS "/opt/rsys/platform" "d:/opt/rsys/platform")
-include_directories(${PocoFoundation_INCLUDE_DIRECTORIES})
+find_package(Poco 1.7 REQUIRED COMPONENTS Foundation JSON XML CONFIG PATHS "$ENV{ISERVERDEV}\\com\\github\\pocoproject\\poco_1_7_9" "$ENV{ISERVERDEV}\\com\\github\\pocoproject\\poco_1_7_9")
+include_directories(${Poco_INCLUDE_DIRECTORIES})
 
-add_executable(generator GeneratedTypes.cpp PrimitiveItem.cpp model/BitsDescription.cpp bootstrap/generate_symbols.cpp)    
+add_executable(generator GeneratedTypes.cpp PrimitiveItem.cpp model/BitsDescription.cpp bootstrap/generate_symbols.cpp)
 target_link_libraries(generator ${Poco_LIBRARIES} ${SYSTEM_LIBS})
 
+# Copy the required DLL files over to the generator EXE directory.
+file(GLOB files "$ENV{ISERVERDEV}/com/github/pocoproject/poco_1_7_9/cmake-build/bin/${CMAKE_BUILD_TYPE}/PocoFoundation*.dll" "$ENV{ISERVERDEV}/com/github/pocoproject/poco_1_7_9/cmake-build/bin/${CMAKE_BUILD_TYPE}/PocoXML*.dll")
+foreach(file ${files})
+add_custom_command(
+        TARGET generator
+        POST_BUILD
+        COMMENT "Copying dll ${file}..."
+        COMMAND ${CMAKE_COMMAND} -E copy ${file} "${CMAKE_CURRENT_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/"
+    )
+endforeach()
 
 # add the command to generate the source code
 set(GENERATED_MODULE "${CMAKE_CURRENT_SOURCE_DIR}/AsterixItemDictionary")
@@ -15,7 +25,7 @@ set(XML_SPECS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../specs")
 # Zoznam XML ako zavislost pre rebuild src
 file(GLOB XML_SPECS_FILES "${XML_SPECS_DIR}/*.xml")
 add_custom_command(OUTPUT ${GENERATED_SOURCE} PRE_BUILD COMMAND generator ${XML_SPECS_DIR} ${GENERATED_MODULE} DEPENDS generator ${XML_SPECS_FILES})
-  
+
 include_directories(. ${CMAKE_CURRENT_BINARY_DIR})
 
 set(srcs ${GENERATED_SOURCE})
