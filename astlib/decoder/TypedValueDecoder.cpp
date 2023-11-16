@@ -34,7 +34,7 @@ void TypedValueDecoder::decode(const CodecContext& ctx, Poco::UInt64 value, int 
         throw Exception("TypedValueDecoder::decode: " + asterixCodeToSymbol(code) + " array expects an index");
     }
 
-    if (index != -1 && !code.isArray())
+    if (index != -1 && !code.isArray() && ctx.bits.name != "spare")
     {
         throw Exception("TypedValueDecoder::decode: " + asterixCodeToSymbol(code) + " scalar value doesn't expects an index");
     }
