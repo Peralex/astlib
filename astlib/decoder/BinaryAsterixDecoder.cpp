@@ -354,11 +354,14 @@ void BinaryAsterixDecoder::decodeBitset(const ItemDescription& uapItem, const Fi
     const BitsDescriptionArray& bitsDescriptions = fixed.bitsDescriptions;
     Poco::UInt64 data = 0;
     Poco::UInt64 data2 = 0;
+    Poco::UInt64 data3 = 0;
     int length = fixed.length;
     Poco::UInt64 value;
 
     for (int i = 0; i < length; i++)
     {
+        data3 <<= 8;
+        data3 |= ((data2 >> 56) & 0xFF);
     	data2 <<= 8;
     	data2 |= ((data >> 56) & 0xFF);
         data <<= 8;
@@ -368,7 +371,8 @@ void BinaryAsterixDecoder::decodeBitset(const ItemDescription& uapItem, const Fi
     for (const BitsDescription& bits : bitsDescriptions)
     {
         CodecContext context(uapItem, _policy, bits, _depth);
-        bool over64bits = bits.to > 64;
+        bool over64bits = (bits.to + context.width) > 64;
+        bool over128bits = (bits.to + context.width) > 128;
 
         if (_policy.verbose)
         {
@@ -381,10 +385,12 @@ void BinaryAsterixDecoder::decodeBitset(const ItemDescription& uapItem, const Fi
             // Send non FX bits only
             if (!bits.fx)
             {
-                if (!over64bits)
+                if (!over64bits && !over128bits)
                 	value = ((data >> lowBit) & 1);
-                else
+                else if (over64bits && !over128bits)
                 	value = ((data2 >> (lowBit-64)) & 1);
+                else
+                    value = ((data3 >> (lowBit - 128)) & 1);
 
                 if (index == 0)
                 {
@@ -399,11 +405,11 @@ void BinaryAsterixDecoder::decodeBitset(const ItemDescription& uapItem, const Fi
             Poco::UInt64 mask = bits.bitMask();
             int lowBit = bits.to - 1;
 
-            if (!over64bits)
+            if (!over64bits && !over128bits)
             {
             	value = ((data >> lowBit) & mask);
             }
-            else
+            else if (over64bits && !over128bits)
             {
             	if (lowBit >= 64)
             	{
@@ -418,6 +424,21 @@ void BinaryAsterixDecoder::decodeBitset(const ItemDescription& uapItem, const Fi
             		Poco::UInt64 aux2 = (data2 << shift2) & mask;
             		value = (aux1 | aux2) & mask;
             	}
+            }
+            else {
+                if (lowBit >= 128)
+                {
+                    value = ((data3 >> (lowBit - 128)) & mask);
+                }
+                else
+                {
+                    // partially data2 and data3
+                    int shift1 = lowBit;
+                    int shift2 = 128 - lowBit;
+                    Poco::UInt64 aux1 = ((data2 & (mask << lowBit)) >> shift1);
+                    Poco::UInt64 aux2 = (data3 << shift2) & mask;
+                    value = (aux1 | aux2) & mask;
+                }
             }
 
             if (index == 0)
